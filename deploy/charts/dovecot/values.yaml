@@ -1,0 +1,152 @@
+# Default values for dovecot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+
+replicaCount: 1
+
+image:
+  registry: docker.io/dovecot
+  repository: dovecot
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  runAsUser: 1000
+  capabilities:
+    add:
+      - SYS_CHROOT
+      
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+auth:
+  config: |
+    passdb static {
+      password = $ENV:USER_PASSWORD
+    }
+  providers:
+    - name:
+      type:
+      config: {}
+
+submission:
+  hostname:
+  relayHost:
+  relayPort:
+  relayTrusted: true
+  relaySSL:
+  relaySSLVerify: false
+  relayUser:
+  relayMasterUser:
+  relayPassword:
+
+service:
+  type: ClusterIP
+  externalIPs: []
+
+services:
+  - name: imap-login
+    processMinAvail: 1
+    clientLimit: 100
+    listeners:
+      - name: imap
+        containerPort: 30143
+        servicePort: 143
+      - name: imaps
+        containerPort: 30993
+        servicePort: 993
+        ssl:
+          enabled: true
+  - name: pop3-login
+    processMinAvail: 1
+    clientLimit: 100
+    listeners:
+      - name: pop3
+        containerPort: 30110
+        servicePort: 110
+      - name: pop3s
+        containerPort: 30995
+        servicePort: 995
+        ssl:
+          enabled: true
+  - name: submission-login
+    processMinAvail: 1
+    clientLimit: 100
+    listeners:
+      - name: submission
+        containerPort: 30587
+        servicePort: 587
+      - name: submissions
+        containerPort: 30465
+        servicePort: 465
+        ssl:
+          enabled: true
+  - name: managesieve-login
+    processMinAvail: 1
+    clientLimit: 100
+    listeners:
+      - name: sieve
+        containerPort: 34190
+        servicePort: 4190
+  - name: lmtp
+    listeners:
+      - name: lmtp
+        containerPort: 30024
+        servicePort: 24
+  - name: doveadm
+    listeners: 
+      - name: https
+        containerPort: 8443
+        servicePort: 443
+        ssl:
+          enabled: true
+  - name: stats
+    processMinAvail: 1
+    listeners:
+      - name: stats
+        containerPort: 9090
+
+tls:
+  secretName:
+
+persistence:
+  enabled: true
+  existingClaim:
+  storageClass:
+  size: 50Gi
+  accessModes:
+    - ReadWriteOnce
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

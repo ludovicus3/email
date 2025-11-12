@@ -1,0 +1,6 @@
+dependencies:
+- name: dovecot
+  repository: ""
+  version: '*.*.*'
+digest: sha256:3dd46833015a0e6e6631e3139fd97b027f0de39830038ed6139c9e53886882ce
+generated: "2025-11-09T04:28:02.144500689Z"
