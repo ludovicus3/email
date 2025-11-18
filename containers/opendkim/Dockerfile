@@ -24,5 +24,4 @@ RUN \
 EXPOSE 8891
 USER opendkim
 
-#ENTRYPOINT [ "/usr/bin/stdsyslog", "-p", "/run/opendkim/opendkim.pid", "-f", "mail" ]
 CMD [ "/start.sh" ]
