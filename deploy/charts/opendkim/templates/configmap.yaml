@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ include "common.names.namespace" . }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  trusted.hosts: |
+    {{- range .Values.opendkim.trustedHosts }}
+    {{ . }}
+    {{- end }}
+  keys.table: |
+    {{- range .Values.opendkim.signingKeys }}
+    {{ printf "%-31s" .name }} {{ .domain }}:{{ .selector }}:{{ include "opendkim.signingKey.path" . }}
+    {{- end }}
+  signing.table: |
+    {{- range .Values.opendkim.signingTable }}
+    {{ printf "%-31s" .matcher }} {{ .keyName }}
+    {{- end }}

@@ -1,0 +1,66 @@
+{{- range .Values.opendkim.signingKeys -}}
+{{- $existing := (lookup "v1" "Secret" (include "common.names.namespace" $) (include "common.names.fullname" $)).data -}}
+{{- if and (not .privateKey) (not (hasKey $existing (include "opendkim.signingKey.file" .))) -}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-generate-%s" (include "common.names.fullname" $) .name }}
+  namespace: {{ include "common.names.namespace" $ }}
+  labels:
+    {{- include "common.labels.standard" $ | nindent 4 }}
+    helm.sh/resource-policy: keep
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  template:
+    spec:
+      serviceAccountName: {{ printf "%s-generator" (include "common.names.fullname" $) }}
+      restartPolicy: Never
+      initContainers:
+        - name: generate
+          image: {{ include "common.images.image" (dict "imageRoot" $.Values.image "global" $.Values.global "chart" $.Chart) }}
+          command:
+            - /bin/sh
+            - -c
+          args:
+            - |
+              /usr/sbin/opendkim-genkey --bits=2048 --domain=$DOMAIN --selector=$SELECTOR --directory=/tmp --append-domain --verbose
+          env:
+            - name: DOMAIN
+              value: {{ .domain }}
+            - name: SELECTOR
+              value: {{ include "opendkim.signingKey.selector" . | quote }}
+          volumeMounts:
+            - name: output
+              mountPath: /tmp
+      containers:
+        - name: apply
+          image: bitnami/kubectl:latest
+          env:
+            - name: SECRET_NAME
+              value: {{ include "common.names.fullname" $ }}
+            - name: SECRET_KEY
+              value: {{ include "opendkim.signingKey.file" . }}
+            - name: KEY_FILE
+              value: {{ printf "%s.private" (include "opendkim.signingKey.selector" .) }}
+            - name: NSUPDATE_FILE
+              value: {{ printf "%s.txt" (include "opendkim.signingKey.selector" .) }}
+            - name: CONFIGMAP_NAME
+              value: {{ printf "%s-nsupdate" (include "common.names.fullname" $) }}
+            - name: CONFIGMAP_KEY
+              value: {{ include "opendkim.signingKey.domainName" . }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              kubectl patch secret $SECRET_NAME --type='strategic' --patch="{\"data\": {\"$SECRET_KEY\": \"$(base64 -w0 /tmp/$KEY_FILE)\"}}"
+              kubectl get configmap $CONFIGMAP_NAME -o json | jq --arg filecontent "$(cat /tmp/$NSUPDATE_FILE)" --arg key "$CONFIGMAP_KEY" '.data[$key] = $filecontent' | kubectl apply -f -
+          volumeMounts:
+            - name: output
+              mountPath: /tmp
+      volumes:
+        - name: output
+          emptyDir: {}
+{{- end -}}
+{{- end -}}
