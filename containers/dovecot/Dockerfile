@@ -10,7 +10,7 @@ ARG VMAIL_DIR=/var/mail
 RUN set -eux; \
     apt-get update; \
     apt-get install --yes --no-install-recommends \
-        dovecot-core dovecot-flatcurve dovecot-imapd dovecot-submissiond dovecot-ldap dovecot-sieve dovecot-managedsieved dovecot-pop3d dovecot-lmtpd \
+        dovecot-{core,flatcurve,imapd,submissiond,ldap,sieve,managesieved,pop3d,lmtpd} \
         spamc \
         tini; \
     rm -rf /var/lib/apt/lists/*
