@@ -1,5 +1,5 @@
 ARG DEBIAN_VERSION=13-slim 
-FROM debian:${DEBIAN_VERSION} AS build
+FROM debian:${DEBIAN_VERSION} AS production-build
 
 ARG POSTFIX_REPO_URL=https://github.com/vdukhovni/postfix.git
 ARG POSTFIX_VERSION=v3.10.5
