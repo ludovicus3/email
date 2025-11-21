@@ -50,7 +50,7 @@ RUN set -eux; \
     useradd -u ${POSTFIX_UID} -g postfix -G root -d /var/spool/postfix -s /usr/sbin/nologin postfix; \
     groupadd -g ${POSTDROP_GID} postdrop
 
-COPY --from=build /install /
+COPY --from=production-build /install /
 COPY --chmod=0755 entrypoint.sh /entrypoint.sh
 COPY --chmod=0640 master.cf /etc/postfix/master.cf
 COPY --chmod=0640 main.cf /etc/postfix/main.cf
