@@ -43,7 +43,6 @@ RUN set -eux; \
 
 RUN set -eux; \
     mkdir -p /etc/postfix; \
-    mkdir -p /etc/postfix/overrides.d; \
     mkdir -p /etc/postfix/maps.d; \
     mkdir -p /var/spool/postfix; \
     groupadd -g ${POSTFIX_GID} postfix; \
