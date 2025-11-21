@@ -30,7 +30,7 @@ RUN set -eux; \
     mkdir /install; \
     make non-interactive-package install_root=/install
 
-FROM debian:${DEBIAN_VERSION}
+FROM debian:${DEBIAN_VERSION} AS production
 
 ARG POSTFIX_UID=1000
 ARG POSTFIX_GID=1000
