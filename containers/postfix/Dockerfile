@@ -28,7 +28,7 @@ USER root
 
 RUN set -eux; \
     mkdir /install; \
-    make non-interactive-package install_root=/install manpages_directory=/usr/share/man
+    make non-interactive-package install_root=/install
 
 FROM debian:${DEBIAN_VERSION}
 
