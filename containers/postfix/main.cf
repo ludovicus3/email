@@ -1,0 +1,81 @@
+smtpd_banner = $myhostname ESMTP $mail_name
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+readme_directory = no
+
+compatibility_level = 3.10
+
+import_environment = MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+
+maillog_file = /dev/stdout
+
+# TLS parameters
+smtpd_tls_auth_only = yes
+smtpd_tls_cert_file=/etc/postfix/ssl/tls.crt
+smtpd_tls_key_file=/etc/postfix/ssl/tls.key
+smtpd_tls_security_level=may
+
+smtp_tls_CApath=/etc/ssl/certs
+smtp_tls_security_level=may
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+
+# filter HELO
+smtpd_helo_required = yes
+smtpd_helo_restrictions =
+        reject_unknown_helo_hostname
+
+# filter MAIL FROM
+smtpd_sender_restrictions =
+        reject_non_fqdn_sender
+        reject_unknown_sender_domain
+        permit
+
+# filter RCPT TO
+smtpd_recipient_restrictions = 
+        reject_invalid_helo_hostname
+        reject_non_fqdn_recipient
+        reject_unknown_recipient_domain
+        warn_if_reject reject_unverified_recipient
+        reject_unauth_destination
+
+smtpd_client_restrictions =
+        warn_if_reject reject_unknown_reverse_client_hostname
+        reject_non_fqdn_helo_hostname
+        reject_unauth_pipelining
+        reject_invalid_helo_hostname
+
+smtpd_relay_restrictions =
+        permit_mynetworks
+        defer_unauth_destination
+
+smtpd_data_restrictions =
+        reject_unauth_pipelining
+#smtpd_end_of_data_restrictions =
+
+mydomain = example.org
+myhostname = smtp.$mydomain
+myorigin = $mydomain
+mydestination = $mydomain
+
+# no forwards from external
+relay_domains =
+relayhost = 
+
+mailbox_size_limit = 0
+
+alias_database = hash:/etc/postfix/aliases
+alias_maps = hash:/etc/postfix/aliases
+
+local_recipient_maps = 
+recipient_delimiter = +
+
+inet_interfaces = all
+inet_protocols = all
+
+# Milter Configuration
+milter_default_action = accept
+milter_protocol = 6
+
