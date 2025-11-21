@@ -1,0 +1,139 @@
+# Default values for postfix.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+local:
+  domain:
+  hostname: "smtp.$mydomain"
+  origin: "$mydomain"
+  destination: "$mydomain"
+
+mailbox:
+  transport:
+  transportMaps: []
+
+tls:
+  secretName:
+
+smtpd:
+  service:
+    annotations: {}
+    type: LoadBalancer
+    externalIps: []
+    port: 25
+  banner: "$myhostname ESMTP $mail_name"
+  requireHelo: true
+  restrictions:
+    helo:
+      - reject_unknown_helo_hostname
+    sender:
+      - reject_non_fqdn_sender
+      - reject_unknown_sender_domain
+      - permit
+    recipient:
+      - reject_invalid_helo_hostname
+      - reject_non_fqdn_recipient
+      - reject_unknown_recipient_domain
+      - warn_if_reject reject_unverified_recipient
+      - reject_unauth_destination
+    client:
+      - warn_if_reject reject_unknown_reverse_client_hostname
+      - reject_non_fqdn_helo_hostname
+      - reject_unauth_pipelining
+      - reject_invalid_helo_hostname
+    relay:
+      - permit_mynetworks
+      - defer_unauth_destination
+    relayBeforeRecipient: []
+    data:
+      - reject_unauth_pipelining
+    etrn: []
+    endOfData: []
+
+submission:
+  service:
+    annotations: {}
+    type: ClusterIP
+    externalIPs: []
+    submissionPort: 587
+    submissionsPort: 465
+
+milters:
+  defaultAction:
+  smtpdMilters: []
+  nonSmtpdMilters: []
+
+customServices:
+#  - name: test
+#    type: unix
+#    private:
+#    unprivileged:
+#    wakeup:
+#    maxProcesses:
+#    command:
+#    args: []
+
+replicaCount: 1
+
+image:
+  registry: gchr.io/ludovicus3/email
+  repository: postfix
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+services:
+  smtpd:
+    type: LoadBalancer
+    externalIPs: []
+    port: 25
+  submission:
+    type: ClusterIP
+    submissionPort: 587
+    submissionsPort: 465
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

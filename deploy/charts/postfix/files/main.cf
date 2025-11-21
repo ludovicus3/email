@@ -1,0 +1,93 @@
+smtpd_banner = {{ .Values.smtpd.banner }}
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+readme_directory = no
+
+compatibility_level = 3.10
+
+import_environment = MAIL_CONFIG MAIL_DEBUG MAIL_LOGTAG TZ LANG=C
+
+maillog_file = /dev/stdout
+
+# TLS parameters
+smtpd_tls_auth_only = yes
+smtpd_tls_cert_file=/etc/postfix/ssl/tls.crt
+smtpd_tls_key_file=/etc/postfix/ssl/tls.key
+smtpd_tls_security_level=may
+
+smtp_tls_CApath=/etc/ssl/certs
+smtp_tls_security_level=may
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+
+{{- with .Values.smtpd }}
+smtpd_helo_required = {{ ternary "yes" "no" .requireHelo }}
+{{- with .restrictions }}
+{{- with .helo }}
+smtpd_helo_restrictions =
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .sender }}
+smtpd_sender_restrictions =
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .recipient }}
+smtpd_recipient_restrictions = 
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .client }}
+smtpd_client_restrictions =
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .relay }}
+smtpd_relay_restrictions =
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .data }}
+smtpd_data_restrictions =
+  {{- join "\n" . | nindent 2 }}
+{{- end }}
+{{- with .endOfData }}
+smtpd_end_of_data_restrictions =
+  {{- join "\n" . | nindent 2 }} 
+{{- end }}
+{{- end }}
+{{- end }}
+
+mydomain = {{ required "A domain is required" .Values.local.domain }}
+myhostname = {{ .Values.local.hostname }}
+myorigin = {{ .Values.local.origin }}
+mydestination = {{ .Values.local.destination }}
+
+{{- if .Values.mailbox.transport }}
+mailbox_transport = {{ .Values.mailbox.transport }}
+{{- end }}
+
+# no forwards from external
+relay_domains =
+relayhost = 
+
+mailbox_size_limit = 0
+
+alias_database = hash:/etc/postfix/aliases
+alias_maps = hash:/etc/postfix/aliases
+
+local_recipient_maps = 
+recipient_delimiter = +
+
+inet_interfaces = all
+inet_protocols = all
+
+{{- with .Values.milters }}
+# Milter Configuration
+milter_default_action = {{ default "accept" .defaultAction }}
+milter_protocol = 6
+{{- with .smtpdMilters }}
+smptd_milters = {{ join " " .smtpdMilters }}
+{{- end }}
+{{- with .nonSmtpdMilters }}
+non_smptd_milters = {{ join " " .nonSmptdMilters }}
+{{- end }}
+{{- end }}
