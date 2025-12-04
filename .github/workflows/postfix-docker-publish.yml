@@ -20,7 +20,7 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: quay.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ vars.QUAY_LOGIN }}/kubemail
+  IMAGE_NAME: ${{ vars.QUAY_ACCOUNT }}/kubemail
   POSTFIX_VERSION: v3.10.5
 
 
