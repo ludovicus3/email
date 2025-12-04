@@ -30,7 +30,7 @@ WORKDIR /build
 
 RUN set -eux; \
     svn checkout ${SPAMASSASSIN_REPO_URL}/tags/${SPAMASSASSIN_TAG} /build; \
-    perl Makefile.PL PREFIX=/ DESTDIR=/install_root CONFDIR=/etc/spamassassin ENABLE_SSL=yes; \
+    perl Makefile.PL DESTDIR=/install_root CONFDIR=/etc/spamassassin ENABLE_SSL=yes; \
     make; \
     make install
     
