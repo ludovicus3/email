@@ -1,5 +1,5 @@
 ARG DEBIAN_VERSION=13-slim
-FROM debian:${DEBIAN_VERSION} AS base
+FROM debian:${DEBIAN_VERSION} AS spamassassin-base
 
 ARG PERL_DEPENDENCIES="perl libdigest-sha-perl libhtml-parser-perl libnet-dns-perl libnetaddr-ip-perl libencode-detect-perl libmime-base64-perl libnet-libidn-perl libemail-address-xs-perl libmail-dkim-perl libmail-spf-perl libmail-dmarc-perl libio-socket-ip-perl librazor2-perl libio-socket-inet6-perl libio-string-perl libbsd-resource-perl libarchive-zip-perl libnet-patricia-perl libmaxmind-db-reader-xs-perl libip-geolocation-mmdb-perl"
 
@@ -8,7 +8,7 @@ RUN set -eux; \
     apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 gpg ${PERL_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
-FROM base AS build
+FROM base AS spamassassin-build
 
 RUN set -eux; \
     apt-get update; \
@@ -35,25 +35,29 @@ RUN set -eux; \
     make install
     
 
-FROM base
+FROM spamassassin-base AS spamassassin
 
-COPY --link --from=build /install_root /
-COPY entrypoint.sh /entrypoint.sh
+COPY --link --from=spamassassin-build /install_root /
+COPY spamassassin/entrypoint.sh /entrypoint.sh
 
 ENV PORT=30783
 ENV ENABLE_SSL="no"
 ENV SSL_PORT=""
-ENV USER_CONFIG_BASE_DIR=/home
+ENV SSL_CERT_FILE=""
+ENV SSL_KEY_FILE=""
+ENV USER_PREFS_DIR=/user-prefs
+ENV RULES_DIR=/var/lib/spamassassin
 ENV SPAMD_PID_FILE=/run/spamd.pid
 
 RUN set -eux; \
-    mkdir -p /var/lib/spamassassin; \
+    mkdir -p ${USER_PREF_DIR}
+    mkdir -p ${RULES_DIR}; \
     touch ${SPAMD_PID_FILE}; \
-    chown nobody:root ${USER_CONFIG_BASE_DIR}; \
-    chown nobody:root /var/lib/spamassassin; \
+    chown nobody:root ${USER_PREFS_DIR}; \
+    chown nobody:root ${RULES_DIR}; \
     chown nobody:root ${SPAMD_PID_FILE}; \
-    chmod g=u ${USER_CONFIG_BASE_DIR}; \
-    chmod g=u /var/lib/spamassassin; \
+    chmod g=u ${USER_PREFS_DIR}; \
+    chmod g=u ${RULES_DIR}; \
     chmod g=u ${SPAMD_PID_FILE}; \
     chmod a+x /entrypoint.sh
 
@@ -61,8 +65,8 @@ USER nobody
 
 EXPOSE ${PORT}
 
-VOLUME /var/lib/spamassassin
-VOLUME ${USER_CONFIG_BASE_DIR}
+VOLUME ${RULES_DIR}
+VOLUME ${USER_PREFS_DIR}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "spamd", "$OPTIONS" ]
+CMD [ "spamd" ]

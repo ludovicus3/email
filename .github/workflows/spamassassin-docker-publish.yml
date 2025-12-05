@@ -22,8 +22,7 @@ env:
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ vars.QUAY_ACCOUNT }}/kubemail
   SPAMASSASSIN_VERSION: v4.0.2
-  SPAMASSASSIN_TAG: spamassassin_release_4_0_2
-
+  SPAMASSASSIN_RELEASE: spamassassin_release_4_0_2
 
 jobs:
   build:
@@ -79,8 +78,9 @@ jobs:
         id: build-and-push
         uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
         with:
-          build-args: SPAMASSASSIN_TAG=${{ env.SPAMASSASSIN_TAG }}
+          build-args: SPAMASSASSIN_RELEASE=${{ env.SPAMASSASSIN_RELEASE }}
           context: containers/spamassassin
+          target: spamassassin
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
