@@ -43,14 +43,12 @@ COPY entrypoint.sh /entrypoint.sh
 ENV PORT=30783
 ENV ENABLE_SSL="no"
 ENV SSL_PORT=""
-ENV SSL_CERT_FILE=""
-ENV SSL_KEY_FILE=""
 ENV USER_PREFS_DIR=/user-prefs
 ENV RULES_DIR=/var/lib/spamassassin
 ENV SPAMD_PID_FILE=/run/spamd.pid
 
 RUN set -eux; \
-    mkdir -p ${USER_PREF_DIR}; \
+    mkdir -p ${USER_PREFS_DIR}; \
     mkdir -p ${RULES_DIR}; \
     touch ${SPAMD_PID_FILE}; \
     chown nobody:root ${USER_PREFS_DIR}; \
