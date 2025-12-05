@@ -8,7 +8,7 @@ RUN set -eux; \
     apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 gpg ${PERL_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
-FROM base AS spamassassin-build
+FROM spamassassin-base AS spamassassin-build
 
 RUN set -eux; \
     apt-get update; \
