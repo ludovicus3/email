@@ -1,5 +1,5 @@
 ARG DEBIAN_VERSION=13-slim
-FROM debian:${DEBIAN_VERSION} AS spamassassin-base
+FROM debian:${DEBIAN_VERSION} AS base
 
 ARG PERL_DEPENDENCIES="perl libdigest-sha-perl libhtml-parser-perl libnet-dns-perl libnetaddr-ip-perl libencode-detect-perl libmime-base64-perl libnet-libidn-perl libemail-address-xs-perl libmail-dkim-perl libmail-spf-perl libmail-dmarc-perl libio-socket-ip-perl librazor2-perl libio-socket-inet6-perl libio-string-perl libbsd-resource-perl libarchive-zip-perl libnet-patricia-perl libmaxmind-db-reader-xs-perl libip-geolocation-mmdb-perl"
 
@@ -8,7 +8,7 @@ RUN set -eux; \
     apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 gpg ${PERL_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
-FROM spamassassin-base AS spamassassin-build
+FROM base AS build
 
 RUN set -eux; \
     apt-get update; \
@@ -35,9 +35,9 @@ RUN set -eux; \
     make install
     
 
-FROM spamassassin-base AS spamassassin
+FROM base AS spamassassin
 
-COPY --link --from=spamassassin-build /install_root /
+COPY --link --from=build /install_root /
 COPY spamassassin/entrypoint.sh /entrypoint.sh
 
 ENV PORT=30783
