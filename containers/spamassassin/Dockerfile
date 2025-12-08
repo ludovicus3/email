@@ -1,14 +1,19 @@
 ARG DEBIAN_VERSION=13-slim
 FROM debian:${DEBIAN_VERSION} AS spamassassin-base
 
+ENV LC_ALL=C.UTF8
+ARG DEBIAN_FRONTEND=noninteractive
+
 ARG PERL_DEPENDENCIES="perl libdigest-sha-perl libhtml-parser-perl libnet-dns-perl libnetaddr-ip-perl libencode-detect-perl libmime-base64-perl libnet-libidn-perl libemail-address-xs-perl libmail-dkim-perl libmail-spf-perl libmail-dmarc-perl libio-socket-ip-perl librazor2-perl libio-socket-inet6-perl libio-string-perl libbsd-resource-perl libarchive-zip-perl libnet-patricia-perl libmaxmind-db-reader-xs-perl libip-geolocation-mmdb-perl"
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 gpg ${PERL_DEPENDENCIES}; \
+    apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 make gcc libperl-dev gpg ${PERL_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
 FROM spamassassin-base AS spamassassin-build
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN set -eux; \
     apt-get update; \
@@ -16,7 +21,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 ARG SPAMASSASSIN_REPO_URL=https://svn.apache.org/repos/asf/spamassassin
-ARG SPAMASSASSIN_TAG=spamassassin_release_4_0_2
+ARG SPAMASSASSIN_VERSION=spamassassin_release_4_0_2
 
 RUN set -eux; \
     mkdir /build; \
@@ -29,15 +34,16 @@ USER nobody
 WORKDIR /build
 
 RUN set -eux; \
-    svn checkout ${SPAMASSASSIN_REPO_URL}/tags/${SPAMASSASSIN_TAG} /build; \
-    perl Makefile.PL DESTDIR=/install_root CONFDIR=/etc/spamassassin ENABLE_SSL=yes; \
+    svn checkout ${SPAMASSASSIN_REPO_URL}/tags/${SPAMASSASSIN_VERSION} /build; \
+    perl Makefile.PL PREFIX=/usr DESTDIR=/install_root CONFDIR=/etc/spamassassin ENABLE_SSL=yes; \
     make; \
     make install
-    
 
 FROM spamassassin-base AS spamassassin
 
-COPY --link --from=spamassassin-build /install_root /
+ARG DEBIAN_FRONTEND=noninteractive
+
+COPY --from=spamassassin-build /install_root /
 COPY entrypoint.sh /entrypoint.sh
 
 ENV PORT=30783
