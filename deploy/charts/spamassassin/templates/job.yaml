@@ -1,0 +1,44 @@
+{{- if .Values.persistence.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "initialize-%s" (include "spamassassin.persistence.claimName" .) }}
+  namespace: {{ include "common.names.namespace" . }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: "pre-install"
+    helm.sh/hook-delete-policy: "hook-succeeded"
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: initialize
+          image: {{ include "spamassassin.image" . }}
+          command:
+            - mkdir -p /mnt/data/rules /mnt/data/user-prefs
+          volumeMounts:
+            - name: data
+              mountPath: /mnt/data
+        - name: sa-update
+          image: {{ include "spamassassin.image" . }}
+          command:
+            - maintenance
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/spamassassin
+              subPath: rules
+      containers:
+        - name: done
+          image: busybox
+          command:
+            - /bin/sh
+            - -c
+            - echo "persistence initialized"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "spamassassin.persistence.claimName" . }}
+      restartPolicy: Never
+      backoffLimit: 3
+{{- end -}}

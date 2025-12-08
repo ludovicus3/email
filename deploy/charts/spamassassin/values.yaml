@@ -1,0 +1,52 @@
+# Default values for spamassassin.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+replicaCount: 1
+
+image:
+  registry: quay.io/ludovicus
+  repository: kubemail
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+
+podAnnotations: {}
+podLabels: {}
+
+persistence:
+  enabled: false
+  maintenance:
+    schedule: "0 3 * * 0"
+  existingClaim:
+  storageClass:
+  size: 5Gi
+  accessModes:
+    - ReadWriteOnce
+
+service:
+  type: ClusterIP
+  port: 783
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: spamassassin
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "4.0.2"
+dependencies:
+  - name: common
+    version: 2.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
