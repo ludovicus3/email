@@ -1,54 +1,150 @@
-FROM debian:13-slim
+ARG DEBIAN_VERSION=13-slim
+FROM debian:${DEBIAN_VERSION} AS dovecot-build
 
-ENV LC_ALL=C.UTF-8 \
-    TZ=UTC
+ARG DOVECOT_REPO_URL=https://github.com/dovecot/core
+ARG DOVECOT_VERSION=2.4.2
 
-ARG VMAIL_UID=1000
-ARG VMAIL_GID=1000
-ARG VMAIL_DIR=/var/mail
+ARG BUILD_DEPENDENCIES="libssl-dev libcap-dev libbz2-dev liblz4-dev libldap2-dev liblua5.3-dev libsqlite3-dev libdb-dev libpq-dev libsasl2-dev libicu-dev libkrb5-dev default-libmysqlclient-dev libzstd-dev libexpat-dev libxapian-dev libstemmer-dev libsodium-dev libexttextcat-dev"
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install --yes --no-install-recommends \
-        dovecot-core dovecot-flatcurve dovecot-imapd dovecot-submissiond dovecot-ldap dovecot-sieve dovecot-managesieved dovecot-pop3d dovecot-lmtpd \
-        spamc \
-        tini; \
+    apt-get install --yes --no-install-recommends git build-essential ca-certificates make autoconf automake libtool gettext pkg-config bison flex devscripts wget ${BUILD_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
-    groupadd -g $VMAIL_GID vmail; \
-    useradd -u $VMAIL_UID -g vmail -d $VMAIL_DIR -s /bin/sh vmail; \
-    passwd -l vmail; \
-    mkdir -p $VMAIL_DIR; \
-    mkdir -p /etc/dovecot/sieve; \
-    mkdir -p /etc/dovecot/services.d; \
-    mkdir -p /etc/dovecot/ssl; \
-    rm -f /etc/dovecot/conf.d/*; \
-    chown vmail:vmail /var/lib/dovecot; \
-    chown vmail:vmail $VMAIL_DIR; \
-    chmod 0770 /var/lib/dovecot; \
-    chmod 0700 $VMAIL_DIR
+    mkdir /build; \
+    mkdir /dovecot; \
+    chown nobody /build; \
+    chown nobody /dovecot
 
-COPY dovecot.conf /etc/dovecot/dovecot.conf
-COPY conf.d/ /etc/dovecot/conf.d
-COPY services.d/ /etc/dovecot/services.d
-COPY sieve/ /etc/dovecot/sieve
-COPY scripts/ /usr/lib/dovecot/sieve
+USER nobody
+
+WORKDIR /build/core
 
 RUN set -eux; \
-    chmod +x /usr/lib/dovecot/sieve/*.sh
+    git clone --single-branch --branch ${DOVECOT_VERSION} ${DOVECOT_REPO_URL} .; \
+    ./autogen.sh; \
+    ./configure \
+        --with-ldap=plugin \
+        --with-sql=plugin \
+        --with-lua=plugin \
+        --with-pgsql \
+        --with-mysql \
+        --with-sqlite \
+        --with-gssapi=plugin \
+        --with-solr \
+        --with-flatcurve \
+        --with-ioloop=best \
+        --with-icu \
+        --with-lz4 \
+        --with-sodium \
+        --with-zstd \
+        --with-bzlib \
+        --with-stemmer \
+        --with-textcat \
+        --with-libcap \
+        --enable-experimental-mail-utf8 \
+        --with-retpoline=thunk-inline \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --localstatedir=/run/dovecot/state \
+        --with-statedir=/run/dovecot/state \
+        --docdir=/usr/share/doc/dovecot-core \
+        --with-moduledir=\${libdir}/dovecot/modules \
+        --with-rundir=/run/dovecot \
+        --disable-rpath \
+        --disable-static; \
+    make
 
-EXPOSE 30024
-EXPOSE 30110
-EXPOSE 30143
-EXPOSE 30465
-EXPOSE 30587
-EXPOSE 30993
-EXPOSE 30995
-EXPOSE 34190
+USER root
+
+RUN set -eux; \
+    make install-strip DESTDIR=/dovecot
+
+USER nobody
+
+WORKDIR /build/pigeonhole
+
+ARG PIGEONHOLE_REPO_URL=https://github.com/dovecot/pigeonhole
+ARG PIGEONHOLE_VERSION=2.4.2
+
+RUN set -eux; \
+    git clone --single-branch --branch ${PIGEONHOLE_VERSION} ${PIGEONHOLE_REPO_URL} .; \
+    ./autogen.sh; \
+    ./configure \
+        --with-dovecot=/build/core \
+        --with-ldap=plugin \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --with-rundir=/run/dovecot \
+        --disable-rpath \
+        --disable-static \
+        --with-retpoline=thunk-inline \
+        --with-unfinished-features; \
+    make
+
+USER root
+
+RUN set -eux; \
+    make install-strip DESTDIR=/dovecot
+
+FROM quay.io/ludovicus/kubemail:spamassassin-v4.0.2 AS spamassassin
+
+FROM debian:${DEBIAN_VERSION} AS dovecot
+
+ARG DEPENDENCIES="libssl3 libcap2 libbz2-1.0 liblz4-1 libldap2 liblua5.3-0 libsqlite3-0 libpq5 libsasl2-2 libicu76 libkrb5-3 libmariadb3 libzstd1 libexpat1 libxapian30 libstemmer0d libsodium23 libexttextcat-2.0-0"
+ARG DOVECOT_GID=0
+ARG DOVEOCT_UID=1000
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install --yes --no-install-recommends tini ${DEPENDENCIES}; \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=spamassassin /usr/bin/spamc /usr/bin/spamc
+COPY --from=dovecot-build /dovecot /
+COPY seive /etc/dovecot/sieve
+COPY scripts /usr/lib/dovecot/sieve
+COPY conf.d /etc/dovecot/conf.d
+
+RUN set -eux; \
+    mkdir -p /etc/dovecot/sieve/default \
+        /var/mail; \
+    groupadd -g $DOVECOT_GID dovecot; \
+    useradd -u $DOVECOT_UID -g dovecot -d /var/mail -s /bin/sh dovecot; \
+    chown -R dovecot:dovecot \
+        /etc/dovecot \
+        /var/mail; \
+    chmod -R g=u \
+        /etc/dovecot \
+        /var/mail; \
+    chmod a+x /usr/lib/dovecot/sieve/*.sh
+
+ENV SPAMD_HOST=spamassassin
+
+USER dovecot
+
+# doveadm
 EXPOSE 8443
+# stats
 EXPOSE 9090
-USER vmail
-VOLUME [ "$VMAIL_DIR" ]
+# lmtp
+EXPOSE 30024
+# imap
+EXPOSE 30143
+# imaps
+EXPOSE 30993
+# pop3
+EXPOSE 30110
+# pop3s
+EXPOSE 30995
+# submission
+EXPOSE 30587
+# submissions
+EXPOSE 30465
+# sieve
+EXPOSE 34190
+VOLUME /var/mail
+
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
-CMD  ["/usr/sbin/dovecot", "-F" ]
+CMD [ "/usr/bin/dovecot", "-F" ]
