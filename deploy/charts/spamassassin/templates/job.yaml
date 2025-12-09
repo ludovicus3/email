@@ -30,7 +30,7 @@ spec:
               subPath: rules
       containers:
         - name: done
-          image: busybox
+          image: {{ include "spamassassin.image" . }}
           command:
             - /bin/sh
             - -c
