@@ -93,8 +93,7 @@ FROM quay.io/ludovicus/kubemail:spamassassin-v4.0.2 AS spamassassin
 FROM debian:${DEBIAN_VERSION} AS dovecot
 
 ARG DEPENDENCIES="libssl3 libcap2 libbz2-1.0 liblz4-1 libldap2 liblua5.3-0 libsqlite3-0 libpq5 libsasl2-2 libicu76 libkrb5-3 libmariadb3 libzstd1 libexpat1 libxapian30 libstemmer0d libsodium23 libexttextcat-2.0-0"
-ARG DOVECOT_GID=0
-ARG DOVEOCT_UID=1000
+ARG DOVECOT_UID=1000
 
 RUN set -eux; \
     apt-get update; \
@@ -103,20 +102,27 @@ RUN set -eux; \
 
 COPY --from=spamassassin /usr/bin/spamc /usr/bin/spamc
 COPY --from=dovecot-build /dovecot /
-COPY seive /etc/dovecot/sieve
-COPY scripts /usr/lib/dovecot/sieve
-COPY conf.d /etc/dovecot/conf.d
 
 RUN set -eux; \
     mkdir -p /etc/dovecot/sieve/default \
-        /var/mail; \
-    groupadd -g $DOVECOT_GID dovecot; \
-    useradd -u $DOVECOT_UID -g dovecot -d /var/mail -s /bin/sh dovecot; \
-    chown -R dovecot:dovecot \
+        /run/dovecot \
+        /var/mail
+
+COPY sieve /etc/dovecot/sieve
+COPY scripts /usr/lib/dovecot/sieve
+COPY dovecot.conf /etc/dovecot/dovecot.conf
+COPY conf.d /etc/dovecot/conf.d
+COPY ssl /etc/dovecot/ssl
+
+RUN set -eux; \
+    useradd -u $DOVECOT_UID -g root -d /var/mail -s /bin/sh dovecot; \
+    chown -R dovecot:root \
         /etc/dovecot \
+        /run/dovecot \
         /var/mail; \
     chmod -R g=u \
         /etc/dovecot \
+        /run/dovecot \
         /var/mail; \
     chmod a+x /usr/lib/dovecot/sieve/*.sh
 
@@ -147,4 +153,4 @@ EXPOSE 34190
 VOLUME /var/mail
 
 ENTRYPOINT [ "/usr/bin/tini", "--" ]
-CMD [ "/usr/bin/dovecot", "-F" ]
+CMD [ "/usr/sbin/dovecot", "-F" ]
