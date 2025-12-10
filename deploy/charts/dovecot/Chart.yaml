@@ -2,7 +2,7 @@ apiVersion: v2
 name: dovecot
 description: A Helm chart to deploy Dovecot into Kubernetes
 type: application
-version: 0.3.4
+version: 0.3.5
 appVersion: "2.4.2"
 dependencies:
   - name: common
