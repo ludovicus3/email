@@ -1,23 +1,26 @@
+{{- range $service := list "submission" -}}
+{{- $values := get $.Values $service -}}
+---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "common.names.fullname" . }}
+  name: {{ printf "%s-%s" (include "common.names.fullname" $) $service }}
+  namespace: {{ include "common.names.namespace" $ }}
   labels:
-    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- include "common.labels.standard" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $service }}
+  {{- with $values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  type: {{ .Values.service.type }}
-  {{- with .Values.service.externalIPs }}
+  type: {{ $values.service.type }}
+  {{- with $values.service.externalIPs }}
   externalIPs:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   ports:
-    {{- range $service := .Values.services }}
-    {{- range $listener := $service.listeners }}
-    - name: {{ .name  }}
-      port: {{ default .containerPort .servicePort }}
-      protocol: TCP
-      targetPort: {{ .name  }}
-    {{- end }}
-    {{- end }}
+    {{- include (printf "dovecot.%s.servicePorts" $service) $ | nindent 4 }}
   selector:
-    {{- include "common.labels.matchLabels" . | nindent 4 }}
+    {{- include "common.labels.matchLabels" $ | nindent 4 }}
+{{- end -}}
