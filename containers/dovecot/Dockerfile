@@ -8,7 +8,7 @@ ARG BUILD_DEPENDENCIES="libssl-dev libcap-dev libbz2-dev liblz4-dev libldap2-dev
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install --yes --no-install-recommends git build-essential ca-certificates make autoconf automake libtool gettext pkg-config bison flex devscripts wget ${BUILD_DEPENDENCIES}; \
+    apt-get install --yes --no-install-recommends git build-essential ca-certificates make autoconf automake libtool gettext pkg-config bison flex devscripts wget ssl-cert ${BUILD_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
@@ -59,7 +59,11 @@ RUN set -eux; \
 USER root
 
 RUN set -eux; \
-    make install-strip DESTDIR=/dovecot
+    make install-strip DESTDIR=/dovecot; \
+    mkdir -p /dovecot/etc/dovecot/ssl; \
+    make-ssl-cert generate-default-snakeoil; \
+    mv /etc/ssl/certs/ssl-cert-snakeoil.pem /dovecot/etc/dovecot/ssl/tls.crt; \
+    mv /etc/ssl/private/ssl-cert-snakeoil.key /dovecot/etc/dovecot/ssl/tls.key
 
 USER nobody
 
@@ -112,7 +116,6 @@ COPY sieve /etc/dovecot/sieve
 COPY scripts /usr/lib/dovecot/sieve
 COPY dovecot.conf /etc/dovecot/dovecot.conf
 COPY conf.d /etc/dovecot/conf.d
-COPY ssl /etc/dovecot/ssl
 
 RUN set -eux; \
     useradd -u $DOVECOT_UID -g root -d /var/mail -s /bin/sh dovecot; \
@@ -126,9 +129,11 @@ RUN set -eux; \
         /var/mail; \
     chmod a+x /usr/lib/dovecot/sieve/*.sh
 
-ENV SPAMD_HOST=spamassassin
-
 USER dovecot
+
+ENV DOVEADM_PASSWORD
+ENV SPAMASSASSIN_HOST
+ENV SPAMASSASSIN_PORT
 
 # doveadm
 EXPOSE 8443

@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/bin/spamc -d ${SPAMD_HOST} -u ${1} -L ham
+exec /usr/bin/spamc --dest ${SPAMASSASSIN_HOST} --port ${SPAMASSASSIN_PORT:-783} --username ${1} --learntype ham
