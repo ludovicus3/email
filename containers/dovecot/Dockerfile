@@ -92,7 +92,8 @@ USER root
 RUN set -eux; \
     make install-strip DESTDIR=/dovecot
 
-FROM quay.io/ludovicus/kubemail:spamassassin-v4.0.2 AS spamassassin
+ARG SPAMASSASSIN_VERSION=4.0.2
+FROM quay.io/kubemail/spamassassin:${SPAMASSASSIN_VERSION} AS spamassassin
 
 FROM debian:${DEBIAN_VERSION} AS dovecot
 
