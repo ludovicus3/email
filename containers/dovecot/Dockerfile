@@ -1,4 +1,5 @@
 ARG DEBIAN_VERSION=13-slim
+ARG SPAMASSASSIN_VERSION=4.0.2
 FROM debian:${DEBIAN_VERSION} AS dovecot-build
 
 ARG DOVECOT_REPO_URL=https://github.com/dovecot/core
@@ -92,7 +93,6 @@ USER root
 RUN set -eux; \
     make install-strip DESTDIR=/dovecot
 
-ARG SPAMASSASSIN_VERSION=4.0.2
 FROM quay.io/kubemail/spamassassin:${SPAMASSASSIN_VERSION} AS spamassassin
 
 FROM debian:${DEBIAN_VERSION} AS dovecot
