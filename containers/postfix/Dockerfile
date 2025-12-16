@@ -1,8 +1,9 @@
 ARG DEBIAN_VERSION=13-slim 
-FROM debian:${DEBIAN_VERSION} AS production-build
+FROM debian:${DEBIAN_VERSION} AS postfix-build
 
 ARG POSTFIX_REPO_URL=https://github.com/vdukhovni/postfix.git
-ARG POSTFIX_VERSION=v3.10.5
+ARG POSTFIX_VERSION=3.10.5
+ARG POSTFIX_BRANCH="v${POSTFIX_VERSION}"
 
 RUN set -eux; \
     apt-get update; \
@@ -17,7 +18,7 @@ WORKDIR /build
 USER nobody
 
 RUN set -eux; \
-    git clone --single-branch --branch ${POSTFIX_VERSION} ${POSTFIX_REPO_URL} .
+    git clone --single-branch --branch ${POSTFIX_BRANCH} ${POSTFIX_REPO_URL} .
 
 WORKDIR /build/postfix
 
@@ -30,7 +31,7 @@ RUN set -eux; \
     mkdir /install; \
     make non-interactive-package install_root=/install
 
-FROM debian:${DEBIAN_VERSION} AS production
+FROM debian:${DEBIAN_VERSION} AS postfix
 
 ARG POSTFIX_UID=1000
 ARG POSTFIX_GID=1000
@@ -43,13 +44,12 @@ RUN set -eux; \
 
 RUN set -eux; \
     mkdir -p /etc/postfix; \
-    mkdir -p /etc/postfix/maps.d; \
     mkdir -p /var/spool/postfix; \
     groupadd -g ${POSTFIX_GID} postfix; \
     useradd -u ${POSTFIX_UID} -g postfix -G root -d /var/spool/postfix -s /usr/sbin/nologin postfix; \
     groupadd -g ${POSTDROP_GID} postdrop
 
-COPY --link --from=production-build /install /
+COPY --from=postfix-build /install /
 COPY --chmod=0755 entrypoint.sh /entrypoint.sh
 COPY --chmod=0640 master.cf /etc/postfix/master.cf
 COPY --chmod=0640 main.cf /etc/postfix/main.cf

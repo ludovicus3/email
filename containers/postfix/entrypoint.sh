@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/bin/sh
 
-shopt -s nullglob
-
-for map in /etc/postfix/maps.d/*; do
-  echo "hashing map $map"
-  /usr/sbin/postmap $map
-done
+if [ -n "${UPDATE_MAPS}"]; then
+  IFS=',' read -r -a maps_array <<< "${UPDATE_MAPS}"
+  for map in "${maps_array[@]}"; do
+    echo "hashing map $map"
+    /usr/sbin/postmap $map
+  done
+fi
 
 echo "updating aliases"
 /usr/bin/newaliases
