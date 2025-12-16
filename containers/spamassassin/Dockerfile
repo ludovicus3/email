@@ -57,7 +57,10 @@ FROM spamassassin-base AS spamassassin
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-COPY --from=spamassassin-build --exclude=/install_root/usr/bin/sa-compile /install_root /
+COPY --from=spamassassin-build \
+     --exclude=/install_root/usr/bin/sa-compile \
+     --exclude=/install_root/usr/bin/sa-update \ 
+     /install_root /
 COPY entrypoint.sh /entrypoint.sh
 
 ENV PORT=30783
