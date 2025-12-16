@@ -16,37 +16,4 @@ if [ -z "${SPAMD_OPTIONS}" ]; then
   export SPAMD_OPTIONS="--syslog-socket=none --pidfile=${SPAMD_PID_FILE} --listen-ip --port=${PORT:-30783} --max-children=5 ${SSL_OPTIONS} ${USER_CONFIG}"
 fi
 
-do_maintenance() {
-  sa-update
-  case $? in
-    0)
-      # got updates
-      sa-compile
-      exit 0
-      ;;
-    1)
-      # no updates
-      exit 0
-      ;;
-    2)
-      spamassassin -- --debug --lint 2>&1
-      exit 1
-      ;;
-    *)
-      echo "sa-update failed for unknown reasons" 1>&2
-      exit 1
-      ;;
-  esac
-}
-
-case $@ in
-  spamd)
-    exec spamd ${SPAMD_OPTIONS}
-    ;;
-  maintenance)
-    do_maintenance
-    ;;
-  *)
-    exec $@
-    ;;
-esac
+exec $@

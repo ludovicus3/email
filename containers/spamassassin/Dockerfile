@@ -8,8 +8,22 @@ ARG PERL_DEPENDENCIES="perl libdigest-sha-perl libhtml-parser-perl libnet-dns-pe
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install --yes --no-install-recommends ca-certificates wget re2c libssl3 make gcc libperl-dev gpg ${PERL_DEPENDENCIES}; \
+    apt-get install --yes --no-install-recommends ca-certificates wget libssl3 ${PERL_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
+
+ENV USER_PREFS_DIR=/user-prefs
+ENV RULES_DIR=/var/lib/spamassassin
+
+RUN set -eux; \
+    mkdir -p ${USER_PREFS_DIR}; \
+    mkdir -p ${RULES_DIR}; \
+    chown nobody:root ${USER_PREFS_DIR}; \
+    chown nobody:root ${RULES_DIR}; \
+    chmod g=u ${USER_PREFS_DIR}; \
+    chmod g=u ${RULES_DIR}
+
+VOLUME ${RULES_DIR}
+VOLUME ${USER_PREFS_DIR}
 
 FROM spamassassin-base AS spamassassin-build
 
@@ -27,7 +41,7 @@ RUN set -eux; \
     mkdir /build; \
     mkdir /install_root; \
     chown nobody:nogroup /build; \
-    chown nobody:nogroup /install_root
+    chown nobody:root /install_root
 
 USER nobody
 
@@ -43,25 +57,18 @@ FROM spamassassin-base AS spamassassin
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-COPY --from=spamassassin-build /install_root /
+COPY --from=spamassassin-build --exclude=/install_root/usr/bin/sa-compile /install_root /
 COPY entrypoint.sh /entrypoint.sh
 
 ENV PORT=30783
 ENV ENABLE_SSL="no"
 ENV SSL_PORT=""
-ENV USER_PREFS_DIR=/user-prefs
-ENV RULES_DIR=/var/lib/spamassassin
 ENV SPAMD_PID_FILE=/run/spamd.pid
+ENV SPAMD_OPTIONS=""
 
 RUN set -eux; \
-    mkdir -p ${USER_PREFS_DIR}; \
-    mkdir -p ${RULES_DIR}; \
     touch ${SPAMD_PID_FILE}; \
-    chown nobody:root ${USER_PREFS_DIR}; \
-    chown nobody:root ${RULES_DIR}; \
     chown nobody:root ${SPAMD_PID_FILE}; \
-    chmod g=u ${USER_PREFS_DIR}; \
-    chmod g=u ${RULES_DIR}; \
     chmod g=u ${SPAMD_PID_FILE}; \
     chmod a+x /entrypoint.sh
 
@@ -69,8 +76,24 @@ USER nobody
 
 EXPOSE ${PORT}
 
-VOLUME ${RULES_DIR}
-VOLUME ${USER_PREFS_DIR}
-
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "spamd" ]
+CMD [ "spamd", "${SPAMD_OPTIONS}" ]
+
+FROM spamassassin-base AS sa-maintenance
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install --yes --no-install-recommends re2c make gcc libperl-dev gpg; \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=spamassassin-build --exclude=/install_root/usr/bin/spamd /install_root /
+COPY spamassassin-maint.sh /spamassassin-maint.sh
+
+RUN set -eux; \
+    chmod a+x /spamassassin-maint.sh
+
+USER nobody
+
+CMD [ "/spamassassin-maint.sh" ]
