@@ -9,7 +9,8 @@ ARG BUILD_DEPENDENCIES="libssl-dev libmilter-dev libmemcached-dev libunbound-dev
 
 RUN set -eux; \
     apt-get update; \
-    apt-get --yes --no-install-recommends install ca-certificates git make build-essential autoconf automake libtool m4 pkg-config gcc-13 g++-13 ${BUILD_DEPENDENCIES}; \
+    apt-get upgrade --yes --no-install-recommends; \
+    apt-get install --yes --no-install-recommends ca-certificates git make build-essential autoconf automake libtool m4 pkg-config gcc-13 g++-13 ${BUILD_DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
