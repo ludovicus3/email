@@ -3,7 +3,7 @@
 set -eux
 
 if [ "$@" = "/usr/sbin/opendmarc" ]; then
-  exec stdsyslog -f mail -p /run/opendmarc/opendmarc.pid $@ -f
+  exec stdsyslog -f mail -p /run/opendmarc/opendmarc.pid $@
 else
   exec $@
 fi
