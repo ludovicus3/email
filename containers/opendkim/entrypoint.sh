@@ -2,8 +2,8 @@
 
 set -eux
 
-if [ "$@" = "/usr/sbin/opendkim" ]; then
-  exec stdsyslog -f mail -p /run/opendkim/opendkim.pid $@ -f
+if [ "$*" = "opendkim" ]; then
+  exec stdsyslog -f mail -p /run/opendkim/opendkim.pid $@
 else
   exec $@
 fi

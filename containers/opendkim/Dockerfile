@@ -62,10 +62,12 @@ RUN set -eux; \
 
 FROM debian:${DEBIAN_VERSION} AS opendkim
 
+ARG DEBIAN_FRONTEND=noninteractive
 ARG DEPENDENCIES="libssl3 libmilter1.0.1 libmemcached11 libunbound8 liblua5.1-0 libopendbx1 libldap2 libdb5.3 lua-cyrussasl"
 
 RUN set -eux; \
     apt-get update; \
+    apt-get upgrade --yes --no-install-recommends; \
     apt-get install --yes --no-install-recommends stdsyslog dns-root-data ${DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
@@ -85,4 +87,4 @@ USER nobody
 EXPOSE 8891
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "/usr/sbin/opendkim" ]
+CMD [ "opendkim" ]
