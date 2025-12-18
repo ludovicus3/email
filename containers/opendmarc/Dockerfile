@@ -45,6 +45,7 @@ RUN set -eux; \
 
 FROM debian:${DEBIAN_VERSION} AS opendmarc
 
+ARG DEBIAN_FRONTENT=noninteractive
 ARG DEPENDENCIES="libmilter1.0.1"
 
 RUN set -eux; \
@@ -69,4 +70,4 @@ USER nobody
 EXPOSE 8893
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "/usr/sbin/opendmarc" ]
+CMD [ "opendmarc" ]
