@@ -49,6 +49,7 @@ ARG DEPENDENCIES="libmilter1.0.1"
 
 RUN set -eux; \
     apt-get update; \
+    apt-get upgrade --yes --no-install-recommends; \
     apt-get install --yes --no-install-recommends stdsyslog ${DEPENDENCIES}; \
     rm -rf /var/lib/apt/lists/*
 
@@ -65,7 +66,7 @@ RUN set -eux; \
 
 USER nobody
  
-EXPOSE 8891
+EXPOSE 8893
 
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/usr/sbin/opendmarc" ]
