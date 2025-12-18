@@ -16,4 +16,9 @@ if [ -z "${SPAMD_OPTIONS}" ]; then
   export SPAMD_OPTIONS="--syslog-socket=none --pidfile=${SPAMD_PID_FILE} --listen-ip --port=${PORT:-30783} --max-children=5 ${SSL_OPTIONS} ${USER_CONFIG}"
 fi
 
-exec $@
+if [ "$*" = "spamd" ]; then
+  exec /usr/bin/spamd ${SPAMD_OPTIONS}
+else
+  exec $@
+fi
+

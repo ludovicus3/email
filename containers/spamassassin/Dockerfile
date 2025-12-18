@@ -80,7 +80,7 @@ USER nobody
 EXPOSE ${PORT}
 
 ENTRYPOINT [ "/entrypoint.sh" ]
-CMD [ "spamd", "${SPAMD_OPTIONS}" ]
+CMD [ "spamd" ]
 
 FROM spamassassin-base AS sa-maintenance
 
