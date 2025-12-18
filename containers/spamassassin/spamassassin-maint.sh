@@ -1,6 +1,6 @@
 #!/bin/sh
 
-/usr/bin/sa-
+sa-update
 result=$?
 case $result in
   0)
