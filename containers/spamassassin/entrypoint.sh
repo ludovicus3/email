@@ -1,7 +1,7 @@
 #!/bin/sh
 
-groupadd -g $(id -u) spamassassin
-usermod -a -G spamassassin spamassassin
+# Fix for Openshift to trick spamd to not call POSIX::setgid
+echo "$(id -un):x:$(id -u):$(id -un)" >> /etc/group
 
 if [ "${ENABLE_SSL}" = "yes" ]; then
   export SSL_OPTIONS="--ssl --server-cert /etc/spamassassin/ssl/tls.crt --server-key /etc/spamassassin/ssl/tls.key"
