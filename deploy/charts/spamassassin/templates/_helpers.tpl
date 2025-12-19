@@ -1,6 +1,17 @@
+{{- define "spamassassin.maintenance.fullname" -}}
+{{- printf "%s-maintenance" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "spamassassin.initializationJob.fullname" -}}
+{{- printf "initialize-%s-pvc" (include "spamassassin.persistence.claimName" .) -}}
+{{- end -}}
+
 {{- define "spamassassin.image" -}}
-{{- $chart := dict "AppVersion" (printf "%s-v%s" .Chart.Name .Chart.AppVersion) "Name" .Chart.Name -}}
-{{- include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global "chart" $chart) -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.spamassassin.image "global" .Values.global "chart" .Chart) -}}
+{{- end -}}
+
+{{- define "spamassassin.maintenance.image" -}}
+{{- include "common.images.image" (dict "imageRoot" .Values.maintenance.image "global" .Values.global "chart" .Chart) -}}
 {{- end -}}
 
 {{- define "spamassassin.persistence.claimName" -}}

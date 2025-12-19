@@ -2,23 +2,24 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ printf "%s-sa-update" (include "common.names.fullname" .) }}
+  name: {{ include "spamassassin.maintenance.fullname" . }}
   namespace: {{ include "common.names.namespace" . }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
 spec:
-  schedule: {{ .Values.persistence.maintenance.schedule }}
+  schedule: {{ quote .Values.maintenance.schedule }}
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-            - name: sa-update
-              image: {{ include "spamassassin.image" . }}
-              imagePullPolicy: IfNotPresent
-              command:
-                - maintenance
+            - name: maintenance
+              image: {{ include "spamassassin.maintenance.image" . }}
               volumeMounts:
+                - name: data
+                  mountPath: /etc/spamassassin/sa-update-keys
+                  subPath: sa-update-keys
                 - name: data
                   mountPath: /var/lib/spamassassin
                   subPath: rules
@@ -26,4 +27,5 @@ spec:
             - name: data
               persistentVolumeClaim:
                 claimName: {{ include "spamassassin.persistence.claimName" . }}
+          restartPolicy: Never
 {{- end -}}

@@ -1,6 +1,7 @@
 apiVersion: v2
 name: spamassassin
-description: A Helm chart for Kubernetes
+icon: https://upload.wikimedia.org/wikipedia/commons/7/73/Apache_SpamAssassin_logo.svg
+description: A Helm chart creating a SpamAssassin Milter
 type: application
 version: 0.1.0
 appVersion: "4.0.2"
