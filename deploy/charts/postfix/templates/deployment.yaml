@@ -32,7 +32,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            runAsUser: 0
           image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global "chart" .Chart) }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
@@ -49,13 +49,13 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: config
-              mountPath: /etc/postfix
+              mountPath: /etc/postfix/main.cf
               subPath: main.cf
             - name: config
-              mountPath: /etc/postfix
+              mountPath: /etc/postfix/master.cf
               subPath: master.cf
             - name: config
-              mountPath: /etc/postfix
+              mountPath: /etc/postfix/aliases
               subPath: aliases
             - name: certs
               mountPath: /etc/postfix/ssl

@@ -7,3 +7,5 @@ appVersion: "1.16.0"
 dependencies:
   - name: dovecot
     version: "*.*.*"
+  - name: opendkim
+    version: "*.*.*"

@@ -39,17 +39,27 @@ verify    unix  -       -       n       -       1       verify
 flush     unix  n       -       n       1000?   0       flush
 proxymap  unix  -       -       n       -       -       proxymap
 proxywrite unix -       -       n       -       1       proxymap
+{{- if .Values.smtp.enabled }}
 smtp      unix  -       -       n       -       -       smtp
+{{- end }}
+{{- if .Values.relay.enabled }}
 relay     unix  -       -       n       -       -       smtp
         -o syslog_name=${multi_instance_name?{$multi_instance_name}:{postfix}}/$service_name
         -o smtp_helo_timeout=5 -o smtp_connect_timeout=5
+{{- end }}
 showq     unix  n       -       n       -       -       showq
 error     unix  -       -       n       -       -       error
 retry     unix  -       -       n       -       -       error
 discard   unix  -       -       n       -       -       discard
+{{- if .Values.local.enabled }}
 local     unix  -       n       n       -       -       local
+{{- end }}
+{{- if .Values.virtual.enabled }}
 virtual   unix  -       n       n       -       -       virtual
+{{- end }}
+{{- if .Values.lmtp.enabled }}
 lmtp      unix  -       -       n       -       -       lmtp
+{{- end }}
 anvil     unix  -       -       n       -       1       anvil
 scache    unix  -       -       n       -       1       scache
 postlog   unix-dgram n  -       n       -       1       postlogd

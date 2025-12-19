@@ -1,15 +1,63 @@
 # Default values for postfix.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
-local:
-  domain:
-  hostname: "smtp.$mydomain"
-  origin: "$mydomain"
-  destination: "$mydomain"
+domain:
+hostname:
+origin:
 
-mailbox:
+aliases:
+  maps:
+    - type:
+      table:
+
+local:
+  enabled: false
   transport:
-  transportMaps: []
+  destinations:
+    - $mydomain
+  recipientMaps: []
+  aliases: 
+    - type: hash
+      table: /etc/postfix/aliases
+
+virtual:
+  enabled: false
+  aliases: []
+#    - type:
+#      table:
+  domains:
+  transport:
+
+relay:
+  enabled: false
+  domains:
+  transport:
+
+lmtp:
+  enabled: false
+
+smtp:
+  enabled: true
+
+transport:
+  maps: []
+  # - type:
+  #   table:
+  #
+
+  # For give user@domain
+  # when domain doesn't match any domain setting
+  default: smtp
+  # domain match and local user match
+  local: local:$myhostname
+  # domain match
+  mailbox:
+  # relay domains
+  relay: relay
+  # virtual domains
+  virtual: virtual
+  # all else failes
+  fallback:
 
 tls:
   secretName:
@@ -112,10 +160,12 @@ securityContext: {}
 
 services:
   smtpd:
+    name:
     type: LoadBalancer
     externalIPs: []
     port: 25
   submission:
+    name:
     type: ClusterIP
     submissionPort: 587
     submissionsPort: 465

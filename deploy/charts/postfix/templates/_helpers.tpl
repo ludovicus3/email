@@ -17,3 +17,7 @@
   {{- print "-" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "postfix.submission.serviceName" -}}
+{{- default "smtpd" .Values.submission.service.name -}}
+{{- end -}}

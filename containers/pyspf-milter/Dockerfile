@@ -40,5 +40,5 @@ USER pyspf-milter
 
 EXPOSE 8893
 
-ENTRYPOINT [ "/entrypoing.sh" ]
+ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/usr/local/bin/pyspf-milter", "/etc/pyspf-milter/pyspf-milter.conf" ]

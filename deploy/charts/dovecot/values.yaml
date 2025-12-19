@@ -6,8 +6,8 @@ global:
 replicaCount: 1
 
 image:
-  registry: docker.io/dovecot
-  repository: dovecot
+  registry: quay.io/ludovicus
+  repository: kubemail
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -19,111 +19,89 @@ fullnameOverride: ""
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext:
-  fsGroup: 1000
+podSecurityContext: {}
 
-securityContext:
-  runAsUser: 1000
-  capabilities:
-    add:
-      - SYS_CHROOT
-      
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext: {}
 
-auth:
-  config: |
-    passdb static {
-      password = $ENV:USER_PASSWORD
-    }
-  providers:
-    - name:
-      type:
-      config: {}
+authentication:
+  oauth2:
+    enabled: false
+    
+  ldap:
+    enabled: false
+    uris:
+      - ldap://ak-outpost-authentik-ldap.authentik.svc.cluster.local
+    base: dc=galensfamily,dc=org
+    authUser: uid=dovecot,ou=users,dc=galensfamily,dc=org
+    authPassword: 4sULRt4iNMABHPZ
+    filter: (&(objectClass=goauthentik.io/ldap/user)(|(uid=%{user})(mail=%{user}))) 
+    passdb:
+      bind: true
+      template: uid=%{user},ou=users,dc=galensfamily,dc=org
+
+lmtp:
+  enabled: true
+  ssl: false
+  service:
+    annotations: {}
+    type: ClusterIP
+    port:
+    externalIPs: []
+
+sieve:
+  enabled: true
+  ssl: true
+  spamassassin:
+    host:
+    port:
+  service:
+    annotations: {}
+    type: ClusterIP
+    port:
+    externalIPs: []
 
 submission:
   hostname:
-  relayHost:
-  relayPort:
-  relayTrusted: true
-  relaySSL:
-  relaySSLVerify: false
-  relayUser:
-  relayMasterUser:
-  relayPassword:
+  service:
+    type: ClusterIP
+    annotations: {}
+    externalIPs: []
+    port:
+    sslPort:
+  relay:
+    host:
+    port:
+    # can be one of (starttls, smtps, no) defaults to no
+    ssl:
+    sslVerify: true
+    trusted: true
+    credentials:
+      master: false
+      secret:
+        name:
+        usernameKey:
+        passwordKey:
 
-service:
-  type: ClusterIP
-  externalIPs: []
+doveadm:
+  service:
+    create: true
+    port:
+  ingress:
+    enabled: false
+    hostname:
 
-services:
-  - name: imap-login
-    processMinAvail: 1
-    clientLimit: 100
-    listeners:
-      - name: imap
-        containerPort: 30143
-        servicePort: 143
-      - name: imaps
-        containerPort: 30993
-        servicePort: 993
-        ssl:
-          enabled: true
-  - name: pop3-login
-    processMinAvail: 1
-    clientLimit: 100
-    listeners:
-      - name: pop3
-        containerPort: 30110
-        servicePort: 110
-      - name: pop3s
-        containerPort: 30995
-        servicePort: 995
-        ssl:
-          enabled: true
-  - name: submission-login
-    processMinAvail: 1
-    clientLimit: 100
-    listeners:
-      - name: submission
-        containerPort: 30587
-        servicePort: 587
-      - name: submissions
-        containerPort: 30465
-        servicePort: 465
-        ssl:
-          enabled: true
-  - name: managesieve-login
-    processMinAvail: 1
-    clientLimit: 100
-    listeners:
-      - name: sieve
-        containerPort: 34190
-        servicePort: 4190
-  - name: lmtp
-    listeners:
-      - name: lmtp
-        containerPort: 30024
-        servicePort: 24
-  - name: doveadm
-    listeners: 
-      - name: https
-        containerPort: 8443
-        servicePort: 443
-        ssl:
-          enabled: true
-  - name: stats
-    processMinAvail: 1
-    listeners:
-      - name: stats
-        containerPort: 9090
+stats:
+  service:
+    create: true
+    port: 9090
 
 tls:
   secretName:
+
+service:
+  annotations: {}
+  type: ClusterIP
+  externalIPs: []
 
 persistence:
   enabled: true

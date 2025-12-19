@@ -21,12 +21,12 @@ opendkim:
   #      -----END PRIVATE KEY-----
   signingTable: []
     # - matcher: "*@example.org"
-    #  keyName: default
+    #   keyName: default
       
 replicaCount: 1
 
 image:
-  registry: image-registry.openshift-image-registry.svc:5000/mailbox
+  registry: quay.io/kubemail
   repository: opendkim
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.

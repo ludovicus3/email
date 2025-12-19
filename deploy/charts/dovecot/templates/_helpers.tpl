@@ -6,3 +6,7 @@
 {{- define "dovecot.persistence.claimName" -}}
 {{- default (include "common.names.fullname" .) .Values.persistence.existingClaim -}}
 {{- end -}}
+
+{{- define "dovecot.lmtp.service" -}}
+{{- printf "%s-lmtp" (include "common.names.fullname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

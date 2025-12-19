@@ -42,11 +42,50 @@ spec:
                 name: {{ . }}
               prefix: SUBMISSION_RELAY_
             {{- end }}
+          env:
+            - name: LMTP_SSL_ENABLE
+              value: {{ ternary "yes" "no" .Values.lmtp.ssl }}
+            - name: SIEVE_SSL_ENABLE
+              value: {{ ternary "yes" "no" .Values.sieve.ssl }}
+            {{- if .Values.sieve.spamassassin.host }}
+            - name: SPAMASSASSIN_HOST
+              value: {{ .Values.sieve.spamassassin.host }}
+            {{- with .Values.sieve.spamassassin.port }}
+            - name: SPAMASSASSIN_PORT
+              value: {{ . }}
+            {{- end }}
+            {{- end }}
           ports:
             - name: sieve
               containerPort: 34190
               protocol: TCP
-            {{- include "dovecot.submission.containerPorts" . | nindent 12 }}
+            - name: submission
+              containerPort: 30587
+              protocol: TCP
+            - name: submissions
+              containerPort: 30465
+              protocol: TCP
+            - name: imap
+              containerPort: 30143
+              protocol: TCP
+            - name: imaps
+              containerPort: 30993
+              protocol: TCP
+            - name: pop3
+              containerPort: 30110
+              protocol: TCP
+            - name: pop3s
+              containerPort: 30995
+              protocol: TCP
+            - name: lmtp
+              containerPort: 30024
+              protocol: TCP
+            - name: doveadm
+              containerPort: 8443
+              protocol: TCP
+            - name: stats
+              containerPort: 9090
+              protocol: TCP
           {{- with .Values.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -75,6 +114,11 @@ spec:
         - name: config
           configMap:
             name: {{ include "common.names.fullname" . }}
+            items:
+              - key: 10-auth.conf
+                path: 10-auth.conf
+              - key: 20-submission.conf
+                path: 20-submission.conf
         {{- with .Values.tls.secretName }}
         - name: ssl
           secret:
