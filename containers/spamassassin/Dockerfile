@@ -14,13 +14,14 @@ RUN set -eux; \
 ENV USER_PREFS_DIR=/user-prefs
 ENV RULES_DIR=/var/lib/spamassassin
 
+ARG SPAMASSASSIN_UID=1000
+
 RUN set -eux; \
     mkdir -p ${USER_PREFS_DIR}; \
     mkdir -p ${RULES_DIR}; \
-    chown nobody:root ${USER_PREFS_DIR}; \
-    chown nobody:root ${RULES_DIR}; \
-    chmod g=u ${USER_PREFS_DIR}; \
-    chmod g=u ${RULES_DIR}
+    useradd -u ${SPAMASSASSIN_UID} -g 0 spamassassin; \
+    chown spamassassin:root ${USER_PREFS_DIR} ${RULES_DIR}; \
+    chmod g=u ${USER_PREFS_DIR} ${RULES_DIR} /etc/group
 
 VOLUME ${RULES_DIR}
 VOLUME ${USER_PREFS_DIR}
@@ -40,10 +41,10 @@ ARG SPAMASSASSIN_VERSION=spamassassin_release_4_0_2
 RUN set -eux; \
     mkdir /build; \
     mkdir /install_root; \
-    chown nobody:nogroup /build; \
-    chown nobody:root /install_root
+    chown spamassassin:root /build; \
+    chown spamassassin:root /install_root
 
-USER nobody
+USER spamassassin
 
 WORKDIR /build
 
@@ -71,11 +72,11 @@ ENV SPAMD_OPTIONS=""
 
 RUN set -eux; \
     touch ${SPAMD_PID_FILE}; \
-    chown nobody:root ${SPAMD_PID_FILE}; \
+    chown spamassassin:root ${SPAMD_PID_FILE}; \
     chmod g=u ${SPAMD_PID_FILE}; \
     chmod a+x /entrypoint.sh
 
-USER nobody
+USER spamassassin
 
 EXPOSE ${PORT}
 
@@ -97,6 +98,6 @@ COPY spamassassin-maint.sh /spamassassin-maint.sh
 RUN set -eux; \
     chmod a+x /spamassassin-maint.sh
 
-USER nobody
+USER spamassassin
 
 CMD [ "/spamassassin-maint.sh" ]

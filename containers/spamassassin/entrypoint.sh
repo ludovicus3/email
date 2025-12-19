@@ -1,5 +1,8 @@
 #!/bin/sh
 
+groupadd -g $(id -u) spamassassin
+usermod -a -G spamassassin spamassassin
+
 if [ "${ENABLE_SSL}" = "yes" ]; then
   export SSL_OPTIONS="--ssl --server-cert /etc/spamassassin/ssl/tls.crt --server-key /etc/spamassassin/ssl/tls.key"
   if [ -n "${SSL_PORT}" ] && [ "${PORT}" != "${SSL_PORT}" ]; then
@@ -7,7 +10,7 @@ if [ "${ENABLE_SSL}" = "yes" ]; then
   fi
 fi
 
-export USER=$(whoami)
+export USER=$(id -un)
 if [ -n "${USER_PREFS_DIR}" ]; then
   export USER_CONFIG="--username=${USER} --allow-tell --create-prefs --nouser-config --virtual-config-dir=${USER_PREFS_DIR}/%d/%l"
 fi
