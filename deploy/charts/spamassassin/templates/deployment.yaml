@@ -24,21 +24,8 @@ spec:
     spec:
       {{- if not .Values.persistence.enabled }}
       initContainers:
-        - name: init-storage
-          image: {{ include "spamassassin.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - name: data
-              mountPath: /mnt
-          command:
-            - /bin/mkdir
-          args:
-            - -p
-            - /mnt/user-prefs
-            - /mnt/rules
         - name: sa-update
-          image: {{ include "spamassassin.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: {{ include "spamassassin.maintenance.image" . }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/spamassassin
@@ -47,14 +34,13 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: {{ include "spamassassin.image" . }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: spamd
               containerPort: 30783
               protocol: TCP
           volumeMounts:
             - name: data
-              mountPath: /home
+              mountPath: /user-prefs
               subPath: user-prefs
             - name: data
               mountPath: /var/lib/spamassassin

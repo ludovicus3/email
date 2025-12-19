@@ -5,13 +5,24 @@ nameOverride: ""
 fullnameOverride: ""
 namespaceOverride: ""
 
+global:
+  imageRegistry: quay.io/kubemail
+
 replicaCount: 1
 
-image:
-  registry: quay.io/ludovicus
-  repository: kubemail
-  pullPolicy: IfNotPresent
-  tag: ""
+spamassassin:
+  image:
+    registry:
+    repository: spamassassin
+    pullPolicy: IfNotPresent
+    tag: ""
+
+maintenance:
+  schedule: "0 3 * * 0"
+  image:
+    registry:
+    repository: sa-maintenance
+    tag: ""
 
 imagePullSecrets: []
 
@@ -20,8 +31,6 @@ podLabels: {}
 
 persistence:
   enabled: false
-  maintenance:
-    schedule: "0 3 * * 0"
   existingClaim:
   storageClass:
   size: 5Gi

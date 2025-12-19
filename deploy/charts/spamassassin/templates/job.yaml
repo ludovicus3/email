@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ printf "initialize-%s" (include "spamassassin.persistence.claimName" .) }}
+  name: {{ include "spamassassin.initializationJob.fullname" . }}
   namespace: {{ include "common.names.namespace" . }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
@@ -14,31 +14,29 @@ spec:
     spec:
       initContainers:
         - name: initialize
-          image: {{ include "spamassassin.image" . }}
+          image: {{ include "spamassassin.maintenance.image" . }}
           command:
-            - mkdir -p /mnt/data/rules /mnt/data/user-prefs
+            - /bin/sh
+          args:
+            - -c
+            - mkdir -p /mnt/rules /mnt/user-prefs /mnt/sa-update-keys
           volumeMounts:
             - name: data
-              mountPath: /mnt/data
-        - name: sa-update
-          image: {{ include "spamassassin.image" . }}
-          command:
-            - maintenance
+              mountPath: /mnt
+      containers:
+        - name: update
+          image: {{ include "spamassassin.maintenance.image" . }}
           volumeMounts:
+            - name: data
+              mountPath: /etc/spamassassin/sa-update-keys
+              subPath: sa-update-keys
             - name: data
               mountPath: /var/lib/spamassassin
               subPath: rules
-      containers:
-        - name: done
-          image: {{ include "spamassassin.image" . }}
-          command:
-            - /bin/sh
-            - -c
-            - echo "persistence initialized"
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: {{ include "spamassassin.persistence.claimName" . }}
       restartPolicy: Never
-      backoffLimit: 3
+  backoffLimit: 3
 {{- end -}}
