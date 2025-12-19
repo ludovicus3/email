@@ -23,6 +23,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=pyspf-milter-build /usr/local /usr/local
+COPY entrypoint.sh /entrypoint.sh
 
 ARG PYSPF_MILTER_UID=1000
 
@@ -30,12 +31,14 @@ RUN set -eux; \
     useradd -u ${PYSPF_MILTER_UID} -g 0 -d /run/pyspf-milter pyspf-milter; \
     mkdir -p /run/pyspf-milter /etc/pyspf-milter; \
     chown pyspf-milter:root /run/pyspf-milter /etc/pyspf-milter; \
-    chmod g=u /run/pyspf-milter /etc/pyspf-milter
+    chmod g=u /run/pyspf-milter /etc/pyspf-milter /etc/passwd /etc/group; \
+    chmod a+x /entrypoint.sh
 
-COPY pyspf-milter.conf /etc/pyspf-milter/pyspf-milter.conf
+COPY --chmod=664 pyspf-milter.conf /etc/pyspf-milter/pyspf-milter.conf
 
 USER pyspf-milter
 
 EXPOSE 8893
 
+ENTRYPOINT [ "/entrypoing.sh" ]
 CMD [ "/usr/local/bin/pyspf-milter", "/etc/pyspf-milter/pyspf-milter.conf" ]
